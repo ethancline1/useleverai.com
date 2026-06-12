@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeverAI: Foundations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:             #0d0d14;
+      --surface:        #14141f;
+      --surface-2:      #1c1c2b;
+      --border:         #252538;
+      --border-2:       #32324a;
+      --text:           #eeeef8;
+      --text-muted:     #8888aa;
+      --text-subtle:    #52527a;
+      --accent:         #e53935;
+      --accent-dark:    #c62828;
+      --accent-hover:   #ff5252;
+      --accent-light:   rgba(229,57,53,0.13);
+      --accent-light-2: rgba(229,57,53,0.28);
+      --gradient:       linear-gradient(135deg, #e53935 0%, #ff6b35 100%);
+      --glow:           0 0 24px rgba(229,57,53,0.25);
+      --shadow:         0 2px 8px rgba(0,0,0,0.5);
+      --shadow-md:      0 6px 24px rgba(0,0,0,0.6);
+      --success:        #22c55e;
+      --success-dark:   #16a34a;
+      --success-light:  rgba(34,197,94,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ── Layout ── */
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .topbar {
+      height: 60px;
+      background: rgba(13,13,20,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 0 var(--border), 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .topbar-logo {
+      font-size: 1.05rem;
+      font-weight: 800;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      cursor: pointer;
+      white-space: nowrap;
+      filter: drop-shadow(0 0 8px rgba(229,57,53,0.4));
+    }
+
+    .topbar-divider { width: 1px; height: 24px; background: var(--border-2); flex-shrink: 0; }
+
+    .topbar-subtitle { font-size: 0.82rem; color: var(--text-subtle); white-space: nowrap; }
+
+    .topbar-free-badge {
+      margin-left: auto;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--success);
+      background: var(--success-light);
+      border: 1px solid rgba(34,197,94,0.3);
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      margin-left: auto;
+      padding: 4px;
+    }
+
+    .body-layout { display: flex; flex: 1; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      height: calc(100vh - 60px);
+      position: sticky;
+      top: 60px;
+      overflow-y: auto;
+      padding: 8px 0 24px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-progress {
+      padding: 14px 16px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .sidebar-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .sidebar-progress-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-subtle);
+    }
+    .sidebar-progress-count {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+    .sidebar-progress-count.all-done { color: var(--success); }
+    .sidebar-progress-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .sidebar-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--gradient);
+      border-radius: 9999px;
+      transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    }
+
+    .nav-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      padding: 16px 16px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 1px 8px;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--gradient);
+      border-radius: 0 2px 2px 0;
+      margin-left: -8px;
+    }
+
+    .nav-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-subtle);
+      flex-shrink: 0;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .nav-item.active .nav-num {
+      background: var(--accent-light);
+      border-color: var(--accent-light-2);
+      color: var(--accent);
+    }
+
+    /* Completed nav item */
+    .nav-item.completed .nav-num {
+      background: var(--success);
+      border-color: var(--success);
+      color: transparent;
+      font-size: 0;
+    }
+    .nav-item.completed .nav-num::after {
+      content: '✓';
+      font-size: 0.72rem;
+      color: white;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-free {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+    .badge-ref {
+      background: var(--surface-2);
+      color: var(--text-subtle);
+      border: 1px solid var(--border-2);
+    }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      padding: 48px 56px;
+      max-width: 860px;
+      width: 100%;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 32px 0 48px;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      background: var(--accent-light);
+      border: 1px solid var(--accent-light-2);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 span {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(229,57,53,0.3));
+    }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+    .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--gradient);
+      color: white;
+      box-shadow: var(--glow);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 32px rgba(229,57,53,0.4); }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border-2);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-lg { padding: 13px 28px; font-size: 0.95rem; }
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    .btn-success:hover { background: var(--success-dark); transform: translateY(-1px); }
+
+    /* ── Typography ── */
+    h1 { font-size: 2.1rem; font-weight: 800; line-height: 1.15; margin-bottom: 12px; letter-spacing: -0.02em; }
+    h2 { font-size: 1.35rem; font-weight: 700; margin: 36px 0 12px; letter-spacing: -0.01em; }
+    h3 { font-size: 1.05rem; font-weight: 700; margin: 24px 0 8px; }
+    p { color: var(--text-muted); margin-bottom: 14px; font-size: 0.93rem; }
+    ul, ol { padding-left: 20px; color: var(--text-muted); font-size: 0.93rem; }
+    li { margin-bottom: 6px; }
+    strong { color: var(--text); font-weight: 600; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent); border: 1px solid var(--border); }
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+    .page-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      line-height: 1.7;
+    }
+    .session-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .phase-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+    }
+    .phase-badge-free {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border-2); }
+    .card h3 { margin-top: 0; color: var(--text); }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    /* ── Callouts ── */
+    .callout {
+      display: flex;
+      gap: 14px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border: 1px solid transparent;
+      font-size: 0.88rem;
+    }
+    .callout-icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1.4; }
+    .callout-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .callout-content { color: var(--text-muted); line-height: 1.6; }
+    .callout-key  { background: var(--accent-light);  border-color: var(--accent-light-2); }
+    .callout-key .callout-label  { color: var(--accent); }
+    .callout-tip  { background: var(--success-light); border-color: rgba(34,197,94,0.25); }
+    .callout-tip .callout-label  { color: var(--success); }
+    .callout-info { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.2); }
+    .callout-info .callout-label { color: #60a5fa; }
+    .callout-warn { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); }
+    .callout-warn .callout-label { color: #fbbf24; }
+
+    /* ── Code Blocks ── */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 14px 0;
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); }
+    .code-content {
+      padding: 16px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.7;
+    }
+    .copy-btn {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--text-subtle);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+    /* ── Tabs ── */
+    .tabs-wrap { margin: 20px 0; }
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      color: var(--text-subtle);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text-muted); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; padding: 20px 0; }
+    .tab-panel.active { display: block; }
+
+    /* ── Steps ── */
+    .steps { list-style: none; padding: 0; counter-reset: step; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .steps li:last-child { border-bottom: none; }
+    .steps li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gradient);
+      color: white;
+      font-weight: 700;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-title { font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 4px; }
+    .step-desc  { font-size: 0.88rem; color: var(--text-muted); }
+
+    /* ── Objectives ── */
+    .objectives {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0 28px;
+    }
+    .objectives-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .objectives ul { padding-left: 16px; margin: 0; }
+    .objectives li { margin-bottom: 4px; font-size: 0.88rem; color: var(--text-muted); }
+
+    /* ── Next Bar ── */
+    .next-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-top: 40px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .next-bar:hover { border-color: var(--accent); box-shadow: var(--glow); }
+    .next-bar-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-subtle); margin-bottom: 4px; }
+    .next-bar-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .next-bar-arrow { font-size: 1.4rem; color: var(--accent); }
+
+    /* ── Complete Bar ── */
+    .complete-bar {
+      margin: 36px 0 0;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .complete-bar.done { border-color: var(--success); background: var(--success-light); }
+    .complete-bar-left { display: flex; align-items: center; gap: 14px; }
+    .complete-bar-icon {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--border-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      color: var(--text-subtle);
+      transition: all 0.25s;
+    }
+    .complete-bar.done .complete-bar-icon { background: var(--success); border-color: var(--success); color: white; font-size: 0.95rem; }
+    .complete-bar-text { font-size: 0.9rem; font-weight: 600; color: var(--text); transition: color 0.25s; }
+    .complete-bar.done .complete-bar-text { color: var(--success); }
+    .complete-bar-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+    .complete-btn-primary {
+      padding: 9px 20px; border-radius: 8px;
+      font-size: 0.83rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border-2);
+      background: var(--surface-2); color: var(--text);
+      white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+    }
+    .complete-btn-primary:hover { border-color: var(--success); color: var(--success); background: var(--success-light); }
+    .complete-btn-undo {
+      background: transparent; border: none;
+      color: var(--text-subtle); font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; padding: 4px 8px; border-radius: 4px;
+      white-space: nowrap; flex-shrink: 0; transition: color 0.2s;
+    }
+    .complete-btn-undo:hover { color: var(--text-muted); }
+
+    /* ── CTA Card ── */
+    .cta-card {
+      background: linear-gradient(135deg, rgba(229,57,53,0.12) 0%, rgba(255,107,53,0.08) 100%);
+      border: 1px solid var(--accent-light-2);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin: 40px 0;
+    }
+    .cta-card h2 { margin-top: 0; color: var(--text); font-size: 1.4rem; }
+    .cta-card p  { color: var(--text-muted); margin-bottom: 20px; }
+
+    /* ── Feature Table ── */
+    .feature-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.87rem; }
+    .feature-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-subtle);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .feature-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+    .feature-table tr:last-child td { border-bottom: none; }
+    .feature-table tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+    .feature-table td:first-child { font-weight: 700; color: var(--text); white-space: nowrap; }
+
+    /* ── Lesson card on home ── */
+    .lesson-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lesson-card:hover { border-color: var(--accent-light-2); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .lesson-num {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .lesson-card h3 { margin: 0 0 6px; font-size: 0.98rem; color: var(--text); }
+    .lesson-card p  { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .lessons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 24px 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 820px) {
+      .sidebar {
+        display: none;
+        position: fixed;
+        top: 60px; left: 0;
+        z-index: 90;
+        height: calc(100vh - 60px);
+        box-shadow: var(--shadow-md);
+      }
+      .sidebar.open { display: block; }
+      .hamburger { display: block; }
+      .topbar-free-badge { display: none; }
+      .main { padding: 28px 20px; }
+      .hero h1 { font-size: 2rem; }
+      .lessons-grid { grid-template-columns: 1fr; }
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Top Bar ── -->
+  <header class="topbar">
+    <div class="topbar-logo" onclick="navigate('home')">⚡ LeverAI: Foundations</div>
+    <div class="topbar-divider"></div>
+    <span class="topbar-subtitle">Free Mini Course · 5 Lessons</span>
+    <span class="topbar-free-badge">Free</span>
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+  </header>
+
+  <div class="body-layout">
+
+    <!-- ── Sidebar ── -->
+    <nav class="sidebar" id="sidebar">
+
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-header">
+          <span class="sidebar-progress-label">Progress</span>
+          <span class="sidebar-progress-count" id="prog-count">0 / 5</span>
+        </div>
+        <div class="sidebar-progress-track">
+          <div class="sidebar-progress-fill" id="prog-fill"></div>
+        </div>
+      </div>
+
+      <div class="nav-section-label">Mini Course</div>
+      <div class="nav-item active" data-page="home" onclick="navigate('home')">
+        <span>🏠</span> Overview
+      </div>
+
+      <div class="nav-section-label">Foundations — Free</div>
+      <div class="nav-item" data-page="l1" onclick="navigate('l1')">
+        <span class="nav-num">01</span> What Claude Is
+        <span class="nav-badge badge-free">Free</span>
+      </div>
+      <div class="nav-item" data-page="l2" onclick="navigate('l2')">
+        <span class="nav-num">02</span> Getting Set Up
+        <span class="nav-badge badge-free">Free</span>
+      </div>
+      <div class="nav-item" data-page="l3" onclick="navigate('l3')">
+        <span class="nav-num">03</span> The 6 Features
+        <span class="nav-badge badge-free">Free</span>
+      </div>
+      <div class="nav-item" data-page="l4" onclick="navigate('l4')">
+        <span class="nav-num">04</span> The 5 Mental Models
+        <span class="nav-badge badge-free">Free</span>
+      </div>
+      <div class="nav-item" data-page="l5" onclick="navigate('l5')">
+        <span class="nav-num">05</span> Prompts That Work
+        <span class="nav-badge badge-free">Free</span>
+      </div>
+
+      <div class="nav-section-label">Reference</div>
+      <div class="nav-item" data-page="resources" onclick="navigate('resources')">
+        <span>📚</span> Quick Reference
+        <span class="nav-badge badge-ref">Ref</span>
+      </div>
+
+    </nav>
+
+    <!-- ── Main Content ── -->
+    <main class="main" id="content">
+      <!-- Populated by JS -->
+    </main>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  PAGE CONTENT
+// ─────────────────────────────────────────────
+
+const pages = {
+
+// ── HOME ──────────────────────────────────────
+home: `
+<div class="hero">
+  <div class="hero-badge">⚡ Free · 5 Lessons · No Signup Required</div>
+  <h1>The <span>LeverAI</span><br>Foundations</h1>
+  <p class="hero-sub">Everything you need to start using Claude effectively — the core mental models, the setup, and the prompts that actually work. Free. No fluff. Start now.</p>
+  <div class="hero-cta">
+    <button class="btn btn-primary btn-lg" onclick="navigate('l1')">Start Lesson 1 →</button>
+    <button class="btn btn-ghost btn-lg" onclick="navigate('resources')">📚 View All Prompts</button>
+  </div>
+</div>
+
+<h2>What's in this mini course</h2>
+<p>Five focused lessons. Everything a beginner needs to go from zero to effective. No jargon, no theory — just what Claude is, how to set it up, and how to use it well from day one.</p>
+
+<div class="lessons-grid">
+  <div class="lesson-card" onclick="navigate('l1')">
+    <div class="lesson-num">Lesson 01</div>
+    <h3>What Claude Actually Is</h3>
+    <p>The one principle that changes everything — and why most people use Claude wrong from the start.</p>
+  </div>
+  <div class="lesson-card" onclick="navigate('l2')">
+    <div class="lesson-num">Lesson 02</div>
+    <h3>Getting Set Up</h3>
+    <p>Account creation, free vs. Pro, enabling Memory, and the rescue prompt for when you get stuck.</p>
+  </div>
+  <div class="lesson-card" onclick="navigate('l3')">
+    <div class="lesson-num">Lesson 03</div>
+    <h3>The 6 Features</h3>
+    <p>Chat, Projects, Artifacts, Memory, Connectors, and Web Search — what each one does and when to use it.</p>
+  </div>
+  <div class="lesson-card" onclick="navigate('l4')">
+    <div class="lesson-num">Lesson 04</div>
+    <h3>The 5 Mental Models</h3>
+    <p>The thinking frameworks that separate people who get great results from people who get mediocre ones.</p>
+  </div>
+  <div class="lesson-card" onclick="navigate('l5')">
+    <div class="lesson-num">Lesson 05</div>
+    <h3>Prompts That Work</h3>
+    <p>Three copy-paste prompt templates that work for almost any task — ready to use right now.</p>
+  </div>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">How to use this course</div>
+    <div class="callout-content">Go in order. Each lesson builds on the last. Use the "Mark Complete" button at the bottom of each lesson to track your progress. Most people finish all 5 lessons in under an hour.</div>
+  </div>
+</div>
+
+`,
+
+// ── LESSON 1 ──────────────────────────────────
+l1: `
+<div class="session-eyebrow">Lesson 01</div>
+<div class="phase-badge phase-badge-free">Foundations — Free</div>
+<h1>What Claude Actually Is</h1>
+<p class="page-subtitle">Before you learn any prompt techniques or features, you need to understand one thing. It changes how you use Claude — and it's the reason most people get mediocre results while others get extraordinary ones.</p>
+
+<div class="objectives">
+  <div class="objectives-label">What you'll learn</div>
+  <ul>
+    <li>What Claude is — and what it critically is not</li>
+    <li>The one core principle that makes everything else work</li>
+    <li>The three interfaces and what each one is built for</li>
+    <li>How to immediately tell whether you're using Claude correctly</li>
+  </ul>
+</div>
+
+<h2>Claude Is a Reasoning Engine, Not a Search Engine</h2>
+<p>This is the most important thing to understand about Claude — and almost nobody explains it clearly upfront.</p>
+<p>Claude doesn't look things up. It doesn't browse the internet in real time (unless you specifically turn on web search). It reasons over information <strong>you give it</strong>. It's an extraordinarily powerful analytical mind — but only about the information you hand it in the conversation.</p>
+
+<div class="callout callout-key">
+  <div class="callout-icon">💡</div>
+  <div>
+    <div class="callout-label">The one principle</div>
+    <div class="callout-content"><strong>Give Claude data. Ask Claude to think.</strong><br><br>Don't ask Claude "what is Tesla's current stock price?" — it doesn't know, and it might guess wrong. Instead, paste in Tesla's earnings report and ask it to analyze the revenue trends. You provide the facts. Claude provides the reasoning. That's when it becomes extraordinary.</div>
+  </div>
+</div>
+
+<h2>Claude vs. Google vs. ChatGPT</h2>
+<p>People mix these up constantly. Here's the actual difference:</p>
+
+<div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))">
+  <div class="card">
+    <div style="font-size:1.4rem;margin-bottom:8px">🔍</div>
+    <h3 style="margin-top:0">Google</h3>
+    <p style="margin:0;font-size:0.85rem">Finds information that exists on the web. Retrieves. Doesn't reason. Great for "where is X" — useless for "what does X mean for my situation."</p>
+  </div>
+  <div class="card" style="border-color:var(--border-2)">
+    <div style="font-size:1.4rem;margin-bottom:8px">🤖</div>
+    <h3 style="margin-top:0">ChatGPT</h3>
+    <p style="margin:0;font-size:0.85rem">Similar to Claude — a large language model built for conversation and reasoning. Different company (OpenAI), different strengths and style. Both are useful.</p>
+  </div>
+  <div class="card" style="border-color:var(--accent-light-2);background:var(--accent-light)">
+    <div style="font-size:1.4rem;margin-bottom:8px">⚡</div>
+    <h3 style="margin-top:0">Claude</h3>
+    <p style="margin:0;font-size:0.85rem">Reasons over information you provide. Extraordinarily good at analysis, writing, coding, and building things — when you give it the right data and ask the right questions.</p>
+  </div>
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-icon">⚠️</div>
+  <div>
+    <div class="callout-label">The mistake everyone makes first</div>
+    <div class="callout-content">Using Claude like Google — asking it to recall current facts, prices, news, or anything that changes in real time. Claude will answer confidently and may be completely wrong. Give it the actual document, data, or text instead. That's when it shines.</div>
+  </div>
+</div>
+
+<h2>The Three Interfaces</h2>
+<p>Claude exists in three different forms. They're not interchangeable — each one is built for a different type of work. Knowing which to use and when is a skill that pays off immediately.</p>
+
+<ol class="steps">
+  <li>
+    <div>
+      <div class="step-title">Claude Web — claude.ai</div>
+      <div class="step-desc">A browser tab. No installation. Works on any computer or phone. This is where you'll do most of your daily work — writing, analysis, research, building tools, connecting Gmail and Calendar. Start here.<br><br>
+      <strong style="color:var(--text)">What it can do:</strong> Chat, Projects, file uploads, web search, Artifacts (live interactive outputs), Gmail/Calendar connectors, Memory.<br><br>
+      <strong style="color:var(--text)">What it can't do:</strong> Access files on your computer. Run tasks automatically on a schedule.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Claude Desktop App</div>
+      <div class="step-desc">A downloadable app (Mac/Windows) from claude.ai/download. Looks almost identical to the web app with one critical addition: <strong>scheduled tasks</strong>.<br><br>
+      Scheduled tasks are automations that run on a timer without you initiating them. Example: every Monday at 8am, check your email for important messages, analyze them, and send you a summary. You write the instructions once. It runs every week automatically.<br><br>
+      <strong style="color:var(--text)">The one constraint:</strong> Scheduled tasks only run while your computer is on and the Desktop app is open.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Claude Code</div>
+      <div class="step-desc">A command-line tool that runs in your terminal. This is the most powerful interface — Claude has full access to your file system, can write and execute code, and can operate as an autonomous agent.<br><br>
+      <strong style="color:var(--text)">What makes it different:</strong> In the web app, you initiate every action. With Claude Code, you describe a multi-step task and Claude plans it, writes the code, runs it, checks for errors, fixes them, and delivers the result. You describe the work. Claude does it.<br><br>
+      <strong style="color:var(--text)">Requires:</strong> Installing Node.js and running two terminal commands. You don't need to know how to code — Anthropic's documentation walks you through it step by step.</div>
+    </div>
+  </li>
+</ol>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div>
+    <div class="callout-label">Where to start</div>
+    <div class="callout-content">Start with Claude Web (claude.ai). It handles everything in this mini course and the vast majority of everyday use. You don't need the Desktop app or Claude Code until you're ready to build automations or full applications.</div>
+  </div>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+  <li><strong>Claude reasons — it doesn't retrieve.</strong> Give it data, ask it to think. That's the whole game.</li>
+  <li><strong>Don't use it like Google.</strong> If you ask Claude to recall current facts without giving it the source material, expect wrong answers.</li>
+  <li><strong>Three interfaces, three jobs.</strong> Web for daily work. Desktop for scheduled automations. Claude Code for building real software.</li>
+  <li><strong>Start simple.</strong> Claude Web is all you need right now. Go to claude.ai, create an account, and you're ready for Lesson 2.</li>
+</ul>
+
+<div class="session-complete-wrap" data-session="l1"></div>
+
+<div class="next-bar" onclick="navigate('l2')">
+  <div>
+    <div class="next-bar-label">Next Up</div>
+    <div class="next-bar-title">Lesson 2 — Getting Set Up</div>
+  </div>
+  <div class="next-bar-arrow">→</div>
+</div>
+`,
+
+// ── LESSON 2 ──────────────────────────────────
+l2: `
+<div class="session-eyebrow">Lesson 02</div>
+<div class="phase-badge phase-badge-free">Foundations — Free</div>
+<h1>Getting Set Up</h1>
+<p class="page-subtitle">From zero to fully configured in under 15 minutes. Account, Pro, Memory — and the two prompts you'll use more than any others.</p>
+
+<div class="objectives">
+  <div class="objectives-label">What you'll learn</div>
+  <ul>
+    <li>How to create your Claude account in 5 minutes</li>
+    <li>What's locked on the free plan and whether you need Pro</li>
+    <li>How to enable Memory and what it actually does</li>
+    <li>The Memory setup prompt and the Screenshot Rescue prompt</li>
+  </ul>
+</div>
+
+<h2>Create Your Account</h2>
+<p>Go to <strong>claude.ai</strong> and sign up. That's it. Here's the full flow:</p>
+
+<ol class="steps">
+  <li>
+    <div>
+      <div class="step-title">Go to claude.ai</div>
+      <div class="step-desc">Open your browser and navigate to <strong>claude.ai</strong>. Works on any browser, any device.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Click "Sign up"</div>
+      <div class="step-desc">Use your email address — Gmail, personal, or work email all work. Click "Sign up" and enter your details.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Verify your email</div>
+      <div class="step-desc">Check your inbox for a verification link from Anthropic. Click it. Takes about 30 seconds.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">You're in</div>
+      <div class="step-desc">You'll land on the Claude chat interface on the free plan. Take a look around — the sidebar on the left is where your conversations and Projects live.</div>
+    </div>
+  </li>
+</ol>
+
+<h2>Free vs. Pro — What You Actually Get</h2>
+<p>Claude has a free tier and a Pro tier at <strong>$20/month</strong>. Here's what the difference actually means:</p>
+
+<div class="card" style="margin-bottom:16px">
+  <table class="feature-table" style="margin:0">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Free</th>
+        <th>Pro ($20/mo)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Daily message limit</td>
+        <td style="color:var(--text-muted)">Limited — you'll hit it fast</td>
+        <td style="color:var(--success)">Much higher limits</td>
+      </tr>
+      <tr>
+        <td>Projects</td>
+        <td style="color:var(--accent)">✗ Locked</td>
+        <td style="color:var(--success)">✓ Included</td>
+      </tr>
+      <tr>
+        <td>File uploads</td>
+        <td style="color:var(--accent)">✗ Locked</td>
+        <td style="color:var(--success)">✓ Included</td>
+      </tr>
+      <tr>
+        <td>Memory</td>
+        <td style="color:var(--text-muted)">Limited</td>
+        <td style="color:var(--success)">✓ Full access</td>
+      </tr>
+      <tr>
+        <td>Latest Claude models</td>
+        <td style="color:var(--text-muted)">Older models only</td>
+        <td style="color:var(--success)">✓ Latest models</td>
+      </tr>
+      <tr>
+        <td>Artifacts (live tools)</td>
+        <td style="color:var(--text-muted)">Basic access</td>
+        <td style="color:var(--success)">✓ Full access</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">💡</div>
+  <div>
+    <div class="callout-label">The honest take on Pro</div>
+    <div class="callout-content">The free plan is fine for casual use. But Projects and file uploads are locked on free — and they're two of the most valuable features in this course. If you're serious about learning to use Claude effectively, Pro is worth the $20. Start free, hit the limits, then decide. Most people upgrade within the first week.</div>
+  </div>
+</div>
+
+<h3>How to Upgrade to Pro</h3>
+<p>Click your <strong>profile icon</strong> in the bottom-left corner → <strong>Upgrade to Pro</strong> → enter your card details. You're on Pro instantly.</p>
+
+<h2>Enable Memory</h2>
+<p>Memory is Claude's ability to remember facts about you <em>across all conversations</em> — not just one chat. Your name, your job, your goals, how you like information formatted. Set it up once and Claude always has that context without you having to repeat yourself.</p>
+
+<p>To turn it on: <strong>Settings → Memory → toggle ON</strong>. Then run the Memory Setup Prompt below — this is the highest-leverage thing you can do in your first five minutes with Claude.</p>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">Do this first</div>
+    <div class="callout-content">Open a new Claude chat, enable Memory in Settings, then paste the Memory Setup Prompt. Everything you tell Claude here carries into every future conversation automatically.</div>
+  </div>
+</div>
+
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Memory Setup Prompt</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">I want to set up your memory so you always have context about me without me having to repeat myself.
+
+Please remember the following:
+
+Name: [your name]
+Role / what I do: [job title, student, entrepreneur, freelancer — whatever fits]
+Current focus: [what you're working on or trying to accomplish right now]
+Goals: [short-term and longer-term goals]
+How I like responses: [e.g., "concise and direct," "use bullet points," "give me options not just one answer"]
+Tools I use: [relevant software, platforms, or languages if applicable]
+Anything else important: [industry, location, constraints, or context Claude should always know]
+
+Confirm what you've saved so I can verify it's correct.</div>
+</div>
+
+<h2>The Screenshot Rescue Prompt</h2>
+<p>You will get stuck at some point — on a setting, an interface, an error message, something that doesn't make sense. This is the fix for every single one of those situations.</p>
+<p>Take a screenshot of whatever is confusing you. Open a new Claude chat. Upload the screenshot. Paste this prompt:</p>
+
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Screenshot Rescue Prompt</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">I'm working through an AI learning guide and I've attached a screenshot of something I don't understand.
+
+Please:
+1. Tell me exactly what I'm looking at in plain English
+2. Explain what I'm supposed to do here — assume I have zero prior experience with this
+3. Walk me through the next 3 steps, naming every button to click
+4. Warn me about the most common mistake a beginner makes at this step so I can avoid it</div>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">Save this prompt somewhere accessible</div>
+    <div class="callout-content">Bookmark the Resources page of this course — every prompt from all 5 lessons lives there in one place. You'll come back to the Screenshot Rescue Prompt more than you'd expect.</div>
+  </div>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+  <li><strong>Account creation takes 5 minutes.</strong> Go to claude.ai, sign up, verify your email. Done.</li>
+  <li><strong>Start on free, upgrade when you hit the wall.</strong> You'll know when — the message limit is obvious and the upgrade is instant.</li>
+  <li><strong>Enable Memory immediately.</strong> Settings → Memory → ON. Then run the Memory Setup Prompt. This one step makes every future Claude conversation better.</li>
+  <li><strong>Keep the Screenshot Rescue Prompt handy.</strong> It fixes confusion faster than anything else — including Google.</li>
+</ul>
+
+<div class="session-complete-wrap" data-session="l2"></div>
+
+<div class="next-bar" onclick="navigate('l3')">
+  <div>
+    <div class="next-bar-label">Next Up</div>
+    <div class="next-bar-title">Lesson 3 — The 6 Features</div>
+  </div>
+  <div class="next-bar-arrow">→</div>
+</div>
+`,
+
+// ── LESSON 3 ──────────────────────────────────
+l3: `
+<div class="session-eyebrow">Lesson 03</div>
+<div class="phase-badge phase-badge-free">Foundations — Free</div>
+<h1>The 6 Features</h1>
+<p class="page-subtitle">Claude has six distinct features and most people use only one — the basic chat. Understanding all six and when to reach for each one is what separates casual users from people who get real results.</p>
+
+<div class="objectives">
+  <div class="objectives-label">What you'll learn</div>
+  <ul>
+    <li>What all 6 Claude features actually do in plain English</li>
+    <li>The real-world analogy that makes each one click</li>
+    <li>Where to find each feature in the interface</li>
+    <li>How different people use these features for real tasks</li>
+  </ul>
+</div>
+
+<h2>The 6 Features at a Glance</h2>
+<p>Read this table once. Come back to it whenever you're not sure which feature to reach for.</p>
+
+<div class="card" style="overflow-x:auto;margin-bottom:8px">
+  <table class="feature-table" style="margin:0;min-width:580px">
+    <thead>
+      <tr>
+        <th style="width:110px">Feature</th>
+        <th>What it does</th>
+        <th>Real-world analogy</th>
+        <th style="width:160px">Where to find it</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>💬 Chat</td>
+        <td>You type a message, Claude responds. Each new chat starts blank — no memory of previous chats unless you use Projects or Memory.</td>
+        <td>Talking to a brilliant person who has complete amnesia between conversations</td>
+        <td>Click "New chat" in the sidebar</td>
+      </tr>
+      <tr>
+        <td>📁 Projects</td>
+        <td>A persistent workspace where Claude reads your instructions and context at the start of every conversation inside it. Set it up once — Claude is fully briefed every time.</td>
+        <td>Hiring a consultant who has read your entire company wiki before every single meeting</td>
+        <td>Sidebar → Projects → New Project</td>
+      </tr>
+      <tr>
+        <td>🧠 Memory</td>
+        <td>Facts Claude remembers forever across all conversations — not just one Project. Your name, role, goals, how you like responses formatted. Tell it once, never repeat it.</td>
+        <td>Teaching a colleague something once and never having to re-explain it again</td>
+        <td>Settings → Memory → toggle ON</td>
+      </tr>
+      <tr>
+        <td>⚡ Artifacts</td>
+        <td>When Claude builds something interactive — a calculator, a tracker, a formatted document, a dashboard — it appears in a live panel next to the chat. You can iterate on it and download or deploy it.</td>
+        <td>A whiteboard that builds itself in real time while you describe what you want</td>
+        <td>Appears automatically when Claude builds something</td>
+      </tr>
+      <tr>
+        <td>🔗 Connectors</td>
+        <td>Live links to your actual tools. Gmail connector = Claude reads your real inbox. Calendar = Claude sees your actual schedule. Not uploads — live data. Claude can act on what it finds.</td>
+        <td>Giving a skilled assistant direct access to your email and calendar</td>
+        <td>Settings → Integrations</td>
+      </tr>
+      <tr>
+        <td>🌐 Web Search</td>
+        <td>When toggled on, Claude looks things up in real time before answering. Fixes the "Claude doesn't know current info" problem for specific tasks where recency matters.</td>
+        <td>Your analyst opening Google before answering your question instead of relying on memory</td>
+        <td>Toggle in the chat input bar</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">💡</div>
+  <div>
+    <div class="callout-label">The most underused feature</div>
+    <div class="callout-content"><strong>Projects.</strong> Most people never set one up, which means Claude starts every conversation with zero context about who they are or what they're working on. Projects fix this entirely — and setting one up takes less than 10 minutes.</div>
+  </div>
+</div>
+
+<h2>What These Features Look Like in Practice</h2>
+<p>Same six features, different situations. Pick the tab that fits you best:</p>
+
+<div class="tabs-wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="t3a">💼 Professional</button>
+    <button class="tab-btn" data-tab="t3b">🎓 Student</button>
+    <button class="tab-btn" data-tab="t3c">🚀 Entrepreneur</button>
+    <button class="tab-btn" data-tab="t3d">✍️ Freelancer</button>
+  </div>
+
+  <div class="tab-panel active" data-tab="t3a">
+    <div class="card-grid">
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">💬 Chat</h3>
+        <p style="margin:0;font-size:0.83rem">Draft a client email, summarize a meeting transcript, prep talking points for a presentation — quick one-off tasks that don't need ongoing context.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">📁 Projects</h3>
+        <p style="margin:0;font-size:0.83rem">Set up a Project for each major client or workstream. Upload their background, your role, and how you work. Claude is fully briefed every time you open a conversation in it.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">🔗 Connectors</h3>
+        <p style="margin:0;font-size:0.83rem">Connect Gmail so Claude can triage your inbox and draft replies. Connect Calendar so it can plan your day, prep for meetings, and flag conflicts — all from real live data.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">⚡ Artifacts</h3>
+        <p style="margin:0;font-size:0.83rem">Ask Claude to build a competitive analysis dashboard, a sales tracker, or a live ROI calculator. The Artifact appears in a panel you can iterate on and share via URL.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab="t3b">
+    <div class="card-grid">
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">💬 Chat</h3>
+        <p style="margin:0;font-size:0.83rem">Explain a concept, work through a problem set, get feedback on an essay draft, summarize a dense reading — the most immediate and flexible use.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">📁 Projects</h3>
+        <p style="margin:0;font-size:0.83rem">Create one Project per course or major paper. Paste in the syllabus, assignment requirements, and any context Claude needs. It stays fully briefed for the whole semester.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">⚡ Artifacts</h3>
+        <p style="margin:0;font-size:0.83rem">Build a custom study flashcard app, a grade calculator, or a visual timeline for a history essay. Artifacts make studying interactive in ways static notes never can.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">🌐 Web Search</h3>
+        <p style="margin:0;font-size:0.83rem">Turn on Web Search when you need current data for research — recent studies, news events, up-to-date statistics. Claude reads real sources and synthesizes them for you.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab="t3c">
+    <div class="card-grid">
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">📁 Projects</h3>
+        <p style="margin:0;font-size:0.83rem">Create Projects for your business, your target market, and your competitors. Upload your pitch deck, business plan, and customer research. Claude becomes a fully-briefed strategic partner.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">⚡ Artifacts</h3>
+        <p style="margin:0;font-size:0.83rem">Build a real estate ROI calculator, a pricing tool, a customer intake form, or a live product demo — fully functional, shareable via URL, no developer needed.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">🔗 Connectors</h3>
+        <p style="margin:0;font-size:0.83rem">Connect your inbox so Claude can monitor inbound leads, draft follow-ups, and flag anything time-sensitive — all from your actual email, not a description of it.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">🌐 Web Search</h3>
+        <p style="margin:0;font-size:0.83rem">Market research, competitor monitoring, industry news — turn on Web Search and ask Claude to analyze what's happening in your space right now, not what it knew months ago.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-tab="t3d">
+    <div class="card-grid">
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">📁 Projects</h3>
+        <p style="margin:0;font-size:0.83rem">One Project per active client. Paste in their brand voice, brief, past feedback, and your agreed scope. Every conversation in that Project starts with Claude fully up to speed.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">⚡ Artifacts</h3>
+        <p style="margin:0;font-size:0.83rem">Build a deliverable directly inside Claude — a formatted report, an interactive proposal, a branded one-pager — and hand the client something polished, not a rough draft.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">💬 Chat</h3>
+        <p style="margin:0;font-size:0.83rem">Draft client emails, write proposals, create content, and get feedback on your own work — the bread and butter of day-to-day freelance use.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;font-size:0.9rem">🧠 Memory</h3>
+        <p style="margin:0;font-size:0.83rem">Tell Claude your niche, your writing style, your typical rates, and how you prefer to communicate. It carries all of that into every conversation without you repeating it.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+  <li><strong>Most people only use Chat.</strong> That's like buying a Swiss Army knife and only using the bottle opener. Projects, Artifacts, and Connectors are where the real leverage is.</li>
+  <li><strong>Projects are the single highest-ROI setup.</strong> Takes 10 minutes to configure. Pays off every single day after that.</li>
+  <li><strong>Artifacts turn Claude into a builder.</strong> If you've only ever seen Claude produce text, you haven't seen what it can actually do. Ask it to "build" something and watch what happens.</li>
+  <li><strong>Turn on Web Search only when you need current info.</strong> For analysis and reasoning tasks, leave it off — Claude performs better reasoning from data you give it than from live web results.</li>
+</ul>
+
+<div class="session-complete-wrap" data-session="l3"></div>
+
+<div class="next-bar" onclick="navigate('l4')">
+  <div>
+    <div class="next-bar-label">Next Up</div>
+    <div class="next-bar-title">Lesson 4 — The 5 Mental Models</div>
+  </div>
+  <div class="next-bar-arrow">→</div>
+</div>
+`,
+
+// ── LESSON 4 ──────────────────────────────────
+l4: `
+<div class="session-eyebrow">Lesson 04</div>
+<div class="phase-badge phase-badge-free">Foundations — Free</div>
+<h1>The 5 Mental Models</h1>
+<p class="page-subtitle">Features and setup get you started. Mental models are what separate people who get extraordinary results from people who get mediocre ones. These five thinking frameworks are the actual skill.</p>
+
+<div class="objectives">
+  <div class="objectives-label">What you'll learn</div>
+  <ul>
+    <li>The five core mental models for using Claude effectively</li>
+    <li>Concrete "don't do this / do this" examples for each one</li>
+    <li>Why each model matters and what breaks when you ignore it</li>
+  </ul>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div>
+    <div class="callout-label">Read these, then use them</div>
+    <div class="callout-content">Don't just read through these once. After each model, open a new Claude chat and try the "do this" example yourself. The difference in output quality is the fastest way to make these stick.</div>
+  </div>
+</div>
+
+<h2>Mental Model 01 — Give Claude Data. Ask Claude to Think.</h2>
+<p>This is the foundation. Everything else in this course builds on it. Claude doesn't look things up — it reasons over what you give it. When you hand it real source material, it becomes extraordinary. When you ask it to recall things from memory, it can confidently produce wrong answers.</p>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr;margin:16px 0">
+  <div class="card" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#ef4444;margin-bottom:8px">❌ Don't do this</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">"What is Apple's current revenue and what does it mean for investors?"</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Claude will answer confidently using outdated training data. The numbers will be wrong.</p>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--success);margin-bottom:8px">✓ Do this instead</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">"Here is Apple's most recent 10-K [paste it]. What are the 3 most important revenue trends and what do they signal about the next two years?"</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">You provided the facts. Claude provides expert-level reasoning. That's the whole game.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">🎯</div>
+  <div>
+    <div class="callout-label">The rule</div>
+    <div class="callout-content">If the answer depends on information Claude wouldn't have memorized — use it for analysis, not for retrieval. Upload the document, paste the data, give it the text. Then ask it to think.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Mental Model 02 — Context Is Everything. More Structure = Better Output.</h2>
+<p>A vague prompt gets a generic answer. A structured prompt with a specific role, clear task, real data, and defined output format gets a consulting-quality deliverable. The prompt is the product. This is the skill worth developing.</p>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr;margin:16px 0">
+  <div class="card" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#ef4444;margin-bottom:8px">❌ Don't do this</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">"Analyze this company."</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">You'll get a generic, surface-level summary that could apply to almost any company.</p>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--success);margin-bottom:8px">✓ Do this instead</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">"You are a senior strategy consultant. I am evaluating this company as a potential acquisition target. Here is their 10-K [paste]. Give me the 3 biggest risks and 3 biggest opportunities. Format: executive brief with bullet points, under 400 words."</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Role + context + data + format = a deliverable worth actually using.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">🎯</div>
+  <div>
+    <div class="callout-label">The rule</div>
+    <div class="callout-content">Every great prompt has four things: a <strong>role</strong> for Claude to play, <strong>context</strong> about your situation, the actual <strong>data or task</strong>, and a defined <strong>output format</strong>. Lesson 5 gives you a copy-paste template that does all four automatically.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Mental Model 03 — Always Run the Adversarial Review.</h2>
+<p>Claude's first answer is a first draft. It's good — often very good — but it's one-pass thinking. The adversarial review is a second pass where you ask Claude to attack its own output. This is where the real insight comes from: the cracks it finds in its own reasoning are almost always the most valuable part of the analysis.</p>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr;margin:16px 0">
+  <div class="card" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#ef4444;margin-bottom:8px">❌ Don't do this</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">Accept Claude's first analysis as final and act on it.</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">First-pass thinking misses edge cases, hidden assumptions, and the strongest counterarguments.</p>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--success);margin-bottom:8px">✓ Do this instead</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">After any important analysis: "Now switch roles. You are a skeptical expert reviewing this. Attack it — where is the logic weakest? What assumption, if wrong, destroys this conclusion? What is this analysis missing?"</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Two-pass thinking is categorically better than one-pass. This is the move.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">🎯</div>
+  <div>
+    <div class="callout-label">The rule</div>
+    <div class="callout-content">One-pass Claude is a first draft. Two-pass Claude is actual thinking. For anything important — a business decision, a piece of writing that will be seen publicly, a plan you'll act on — always run the adversarial review. The full prompt is in Lesson 5.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Mental Model 04 — Fresh Conversations for New Topics. Projects for Ongoing Work.</h2>
+<p>Long conversations degrade. As a thread gets longer, Claude starts to lose context from early in the conversation, response quality drops, and it begins to agree with you rather than reason independently. The fix is simple: keep conversations short and focused, and use Projects to inject permanent context without polluting the thread.</p>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr;margin:16px 0">
+  <div class="card" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#ef4444;margin-bottom:8px">❌ Don't do this</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">Keep one massive conversation going for days, jumping between topics, re-explaining context over and over.</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Output quality quietly degrades as the conversation grows. You might not notice until the answers start feeling off.</p>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--success);margin-bottom:8px">✓ Do this instead</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">Start a new chat for each distinct task. Use a Project for ongoing work — your standing context loads fresh at the start of every conversation in it, no re-explaining required.</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Short, focused conversations + Projects for permanent context = consistently sharp output.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">🎯</div>
+  <div>
+    <div class="callout-label">The rule</div>
+    <div class="callout-content">Think of conversations as disposable — use them for one task, then start fresh. Projects are permanent — they hold your standing context and reload it every time. Never re-explain who you are or what you're working on. That's what Projects are for.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Mental Model 05 — Don't Prompt. Architect.</h2>
+<p>There are two kinds of Claude users. The first uses Claude to complete individual tasks — write this email, summarize this document, answer this question. They save time. The second designs systems — reusable templates, chained workflows, automated pipelines that run on a schedule. They create new capabilities. This course teaches you to be the second kind.</p>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr;margin:16px 0">
+  <div class="card" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#ef4444;margin-bottom:8px">❌ The operator mindset</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">"Write me a summary of this article." Every time, from scratch, for each article.</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Saves hours. But you're always in the loop. You're the bottleneck.</p>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05)">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--success);margin-bottom:8px">✓ The architect mindset</div>
+    <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">Build a Zapier workflow: new article arrives in RSS → Claude filters for relevance → summarizes the ones worth reading → emails you a digest every Monday morning. Set it up once. It runs forever.</p>
+    <p style="margin:8px 0 0;font-size:0.78rem;color:var(--text-subtle)">Creates a new capability that runs without you. That's leverage.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">🎯</div>
+  <div>
+    <div class="callout-label">The rule</div>
+    <div class="callout-content">Every time you do the same Claude task twice, ask yourself: "Could this be a template? Could this be automated? Could I build a system that does this without me?" That question is what turns Claude from a useful tool into a genuine competitive advantage.</div>
+  </div>
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+  <li><strong>Model 01:</strong> Give Claude the actual data. Ask it to reason. Don't ask it to recall.</li>
+  <li><strong>Model 02:</strong> Structure your prompts. Role + context + data + format = a great output every time.</li>
+  <li><strong>Model 03:</strong> Run the adversarial review on anything important. Two-pass thinking beats one-pass, always.</li>
+  <li><strong>Model 04:</strong> Keep conversations short. Use Projects for standing context. Never re-explain yourself.</li>
+  <li><strong>Model 05:</strong> Think like an architect, not an operator. Build systems, not just prompts.</li>
+</ul>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">One exercise before moving on</div>
+    <div class="callout-content">Open Claude and try the same request two ways: first as the "don't do this" version, then as the "do this" version from any of the five models above. Look at the difference in output quality. That difference is the mental model working.</div>
+  </div>
+</div>
+
+<div class="session-complete-wrap" data-session="l4"></div>
+
+<div class="next-bar" onclick="navigate('l5')">
+  <div>
+    <div class="next-bar-label">Next Up</div>
+    <div class="next-bar-title">Lesson 5 — Prompts That Work</div>
+  </div>
+  <div class="next-bar-arrow">→</div>
+</div>
+`,
+
+// ── LESSON 5 ──────────────────────────────────
+l5: `
+<div class="session-eyebrow">Lesson 05</div>
+<div class="phase-badge phase-badge-free">Foundations — Free</div>
+<h1>Prompts That Work</h1>
+<p class="page-subtitle">Knowing the principles is one thing. Having the actual prompts ready to paste is another. These three templates cover the vast majority of what you'll ever need Claude to do — and they're all built on the mental models from Lesson 4.</p>
+
+<div class="objectives">
+  <div class="objectives-label">What you'll learn</div>
+  <ul>
+    <li>Three universal prompt templates you can use for almost any task</li>
+    <li>When and why to reach for each one</li>
+    <li>How to customize each template for your specific situation</li>
+  </ul>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-icon">ℹ️</div>
+  <div>
+    <div class="callout-label">How to use these</div>
+    <div class="callout-content">Each prompt has a Copy button. Paste it into Claude, fill in the brackets with your real information, and go. These are starting points — the more specifically you fill them in, the better the output you'll get back.</div>
+  </div>
+</div>
+
+<h2>Prompt 1 — The Universal Opener</h2>
+<p>Use this on any analytical, research, or writing task. The four elements — role, context, data, format — are the same four things that make every great prompt work. This template forces you to include all of them.</p>
+<p><strong>When to use it:</strong> Any time you're asking Claude to analyze something, write something substantial, or produce a deliverable you'll actually use. This is your default prompt structure for serious work.</p>
+
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Universal Opener</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">You are a [specific expert role — e.g., "senior financial analyst," "experienced copywriter," "strategic consultant"].
+
+I am a [your role/background — e.g., "marketing manager," "freelance designer," "first-year finance student"] working toward [your goal — e.g., "pitching this client next week," "building my portfolio," "passing this exam"].
+
+Here is the data/information you need:
+[paste your document, spreadsheet data, notes, or relevant context here]
+
+Your task: [exactly what you want Claude to do — be specific]
+
+Format your response as:
+- [Section or output type 1]
+- [Section or output type 2]
+- [Section or output type 3]
+
+Constraints: Keep it under [X] words. Flag any estimates as [ESTIMATE] and any assumptions as [ASSUMPTION]. End with the 3 things I should verify before acting on this.</div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">💡</div>
+  <div>
+    <div class="callout-label">What makes this work</div>
+    <div class="callout-content">The role tells Claude how to think. The context tells Claude who it's talking to. The data gives it something real to reason about. The format tells it exactly what to produce. All four together = a prompt that gets results the first time instead of requiring five rounds of back-and-forth.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Prompt 2 — The Adversarial Review</h2>
+<p>Run this immediately after Claude gives you any important analysis, plan, or piece of writing. It asks Claude to switch roles and attack its own output — and the cracks it finds in its own reasoning are almost always the most valuable part of the whole exchange.</p>
+<p><strong>When to use it:</strong> After any analysis you plan to act on. After a business plan, a strategic recommendation, a piece of writing that will be seen publicly, a proposal before you send it. Anything where being wrong is costly — run the adversarial review first.</p>
+
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Adversarial Review</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">Now switch roles. You are a skeptical senior expert reviewing this analysis.
+
+Attack it:
+1. Where is the logic weakest?
+2. What assumption, if wrong, destroys this conclusion entirely?
+3. What would make a smart, experienced person immediately dismiss this?
+4. What critical information are we missing that would change the recommendation?
+
+Be direct. Don't defend the previous answer — challenge it. Give me the strongest case that the analysis above is wrong.</div>
+</div>
+
+<div class="callout callout-key">
+  <div class="callout-icon">💡</div>
+  <div>
+    <div class="callout-label">Why this works so well</div>
+    <div class="callout-content">Claude's first answer is optimized to be helpful and agreeable. The adversarial review forces it out of that mode. The "skeptical senior expert who rejects 80% of analyses" framing is specific enough that Claude actually takes a harder stance — not just a softened version of its original answer.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Prompt 3 — The Screenshot Rescue</h2>
+<p>You already saw this in Lesson 2. It's here again because it's that useful. Any time you're stuck on an interface, an error message, a confusing setting, or something in this course that isn't making sense — take a screenshot, open Claude, upload it, paste this prompt.</p>
+<p><strong>When to use it:</strong> Whenever you're stuck. Full stop. GitHub settings, Zapier workflows, terminal errors, Claude interface confusion — this prompt handles all of it and is consistently better than Googling the problem.</p>
+
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Screenshot Rescue</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">I'm working through an AI learning guide and I've attached a screenshot of something I don't understand.
+
+Please:
+1. Tell me exactly what I'm looking at in plain English
+2. Explain what I'm supposed to do here — assume I have zero prior experience with this
+3. Walk me through the next 3 steps, naming every button to click
+4. Warn me about the most common mistake a beginner makes at this step so I can avoid it</div>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">Bookmark the Resources page</div>
+    <div class="callout-content">All four prompts from this course — Universal Opener, Adversarial Review, Screenshot Rescue, and Memory Setup — live in one place on the Resources page. Open it in a separate tab so you always have them within reach.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>Putting It Together</h2>
+<p>Here's how these three prompts work as a system on any serious task:</p>
+
+<ol class="steps">
+  <li>
+    <div>
+      <div class="step-title">Start with the Universal Opener</div>
+      <div class="step-desc">Set the role, give Claude the context and data, define exactly what you want back and in what format. This is your starting point for almost every non-trivial task.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Run the Adversarial Review</div>
+      <div class="step-desc">After Claude delivers its first answer on anything important, immediately run the adversarial review. The weaknesses it surfaces are usually more valuable than the original analysis.</div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="step-title">Use Screenshot Rescue whenever you're stuck</div>
+      <div class="step-desc">Don't spend 20 minutes Googling an error. Take a screenshot, paste the rescue prompt, and have Claude walk you through it step by step. This alone saves hours.</div>
+    </div>
+  </li>
+</ol>
+
+
+<div class="session-complete-wrap" data-session="l5"></div>
+
+<div class="next-bar" onclick="navigate('resources')">
+  <div>
+    <div class="next-bar-label">Final Stop</div>
+    <div class="next-bar-title">Resources — All Prompts in One Place →</div>
+  </div>
+  <div class="next-bar-arrow">→</div>
+</div>
+`,
+
+// ── RESOURCES ─────────────────────────────────
+resources: `
+<div class="page-header">
+  <div class="hero-badge" style="margin-bottom:16px">📚 Quick Reference</div>
+  <h1>All Prompts — One Place</h1>
+  <p class="page-subtitle">Every prompt from the mini course, ready to copy. No need to go back through lessons to find them. Bookmark this page.</p>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-icon">✅</div>
+  <div>
+    <div class="callout-label">How to use this page</div>
+    <div class="callout-content">Hit the Copy button on any prompt, paste it into Claude, fill in the brackets with your real information, and go. The brackets show you what to customize — everything else stays as written.</div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<h2>1 — Memory Setup Prompt <span style="font-size:0.75rem;font-weight:500;color:var(--text-subtle);margin-left:8px">Lesson 2</span></h2>
+<p>Run this in a new Claude chat after enabling Memory in Settings. Do it once — Claude carries everything you tell it into every future conversation automatically.</p>
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Memory Setup</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">I want to set up your memory so you always have context about me without me having to repeat myself.
+
+Please remember the following:
+
+Name: [your name]
+Role / what I do: [job title, student, entrepreneur, freelancer — whatever fits]
+Current focus: [what you're working on or trying to accomplish right now]
+Goals: [short-term and longer-term goals]
+How I like responses: [e.g., "concise and direct," "use bullet points," "give me options not just one answer"]
+Tools I use: [relevant software, platforms, or languages if applicable]
+Anything else important: [industry, location, constraints, or context Claude should always know]
+
+Confirm what you've saved so I can verify it's correct.</div>
+</div>
+
+<hr class="divider" />
+
+<h2>2 — Universal Opener <span style="font-size:0.75rem;font-weight:500;color:var(--text-subtle);margin-left:8px">Lesson 5</span></h2>
+<p>Your default prompt structure for any analytical, research, or writing task. Fill in the role, your context, your data, and your desired format — then go.</p>
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Universal Opener</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">You are a [specific expert role — e.g., "senior financial analyst," "experienced copywriter," "strategic consultant"].
+
+I am a [your role/background] working toward [your goal].
+
+Here is the data/information you need:
+[paste your document, spreadsheet data, notes, or relevant context here]
+
+Your task: [exactly what you want Claude to do — be specific]
+
+Format your response as:
+- [Section or output type 1]
+- [Section or output type 2]
+- [Section or output type 3]
+
+Constraints: Keep it under [X] words. Flag any estimates as [ESTIMATE] and any assumptions as [ASSUMPTION]. End with the 3 things I should verify before acting on this.</div>
+</div>
+
+<hr class="divider" />
+
+<h2>3 — Adversarial Review <span style="font-size:0.75rem;font-weight:500;color:var(--text-subtle);margin-left:8px">Lesson 5</span></h2>
+<p>Paste this immediately after Claude delivers any important analysis, plan, or recommendation. Ask it to attack its own output. The weaknesses it finds are almost always the most valuable part.</p>
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Adversarial Review</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">Now switch roles. You are a skeptical senior expert reviewing this analysis.
+
+Attack it:
+1. Where is the logic weakest?
+2. What assumption, if wrong, destroys this conclusion entirely?
+3. What would make a smart, experienced person immediately dismiss this?
+4. What critical information are we missing that would change the recommendation?
+
+Be direct. Don't defend the previous answer — challenge it. Give me the strongest case that the analysis above is wrong.</div>
+</div>
+
+<hr class="divider" />
+
+<h2>4 — Screenshot Rescue <span style="font-size:0.75rem;font-weight:500;color:var(--text-subtle);margin-left:8px">Lessons 2 &amp; 5</span></h2>
+<p>Stuck on anything — an interface, an error, a confusing setting? Take a screenshot, open a new Claude chat, upload the image, and paste this. Faster and better than Googling.</p>
+<div class="code-block">
+  <div class="code-header"><span class="code-label">Screenshot Rescue</span><button class="copy-btn">Copy</button></div>
+  <div class="code-content">I'm working through an AI learning guide and I've attached a screenshot of something I don't understand.
+
+Please:
+1. Tell me exactly what I'm looking at in plain English
+2. Explain what I'm supposed to do here — assume I have zero prior experience with this
+3. Walk me through the next 3 steps, naming every button to click
+4. Warn me about the most common mistake a beginner makes at this step so I can avoid it</div>
+</div>
+
+
+`,
+
+}; // end pages
+
+// ─────────────────────────────────────────────
+//  ROUTER
+// ─────────────────────────────────────────────
+
+function navigate(page) {
+  const content = document.getElementById('content');
+  const html = pages[page];
+  if (!html) return;
+  content.innerHTML = html;
+  content.scrollTop = 0;
+  window.scrollTo(0, 0);
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  document.getElementById('sidebar').classList.remove('open');
+  wireCopyButtons();
+  wireTabButtons();
+  wireCompleteButtons();
+  updateNavProgress();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── Copy buttons ──
+function wireCopyButtons() {
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.onclick = function() {
+      const block = this.closest('.code-block');
+      const text = block ? block.querySelector('.code-content').innerText : '';
+      navigator.clipboard.writeText(text).then(() => {
+        this.textContent = '✓ Copied';
+        this.classList.add('copied');
+        setTimeout(() => { this.textContent = 'Copy'; this.classList.remove('copied'); }, 2000);
+      });
+    };
+  });
+}
+
+// ── Tab buttons ──
+function wireTabButtons() {
+  document.querySelectorAll('.tabs-wrap').forEach(wrap => {
+    wrap.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.onclick = function() {
+        wrap.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        wrap.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        const target = wrap.querySelector(`.tab-panel[data-tab="${this.dataset.tab}"]`);
+        if (target) target.classList.add('active');
+      };
+    });
+  });
+}
+
+// ── Session Progress (wired fully in Prompt 4) ──
+const SESSION_IDS = ['l1','l2','l3','l4','l5'];
+const PROGRESS_KEY = 'leverai_foundations_progress';
+
+function getProgress() {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function toggleComplete(sessionId) {
+  const progress = getProgress();
+  progress[sessionId] = !progress[sessionId];
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  renderCompleteBar(sessionId, progress[sessionId]);
+  updateNavProgress();
+}
+
+function renderCompleteBar(sessionId, isDone) {
+  const wrap = document.querySelector(`.session-complete-wrap[data-session="${sessionId}"]`);
+  if (!wrap) return;
+  const num = sessionId.replace('l', '');
+  if (isDone) {
+    wrap.innerHTML = `
+      <div class="complete-bar done">
+        <div class="complete-bar-left">
+          <div class="complete-bar-icon">✓</div>
+          <div>
+            <div class="complete-bar-text">Lesson ${num} Complete</div>
+            <div class="complete-bar-sub">Nicely done. Keep the momentum going.</div>
+          </div>
+        </div>
+        <button class="complete-btn-undo" onclick="toggleComplete('${sessionId}')">Undo</button>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="complete-bar">
+        <div class="complete-bar-left">
+          <div class="complete-bar-icon">○</div>
+          <div>
+            <div class="complete-bar-text">Mark Lesson ${num} Complete</div>
+            <div class="complete-bar-sub">Check it off once you've finished the lesson and tried the prompts.</div>
+          </div>
+        </div>
+        <button class="complete-btn-primary" onclick="toggleComplete('${sessionId}')">Mark Complete</button>
+      </div>`;
+  }
+}
+
+function wireCompleteButtons() {
+  const progress = getProgress();
+  document.querySelectorAll('.session-complete-wrap[data-session]').forEach(wrap => {
+    renderCompleteBar(wrap.dataset.session, !!progress[wrap.dataset.session]);
+  });
+}
+
+function updateNavProgress() {
+  const progress = getProgress();
+  const doneCount = SESSION_IDS.filter(id => progress[id]).length;
+  SESSION_IDS.forEach(id => {
+    const el = document.querySelector(`.nav-item[data-page="${id}"]`);
+    if (el) el.classList.toggle('completed', !!progress[id]);
+  });
+  const countEl = document.getElementById('prog-count');
+  const fillEl  = document.getElementById('prog-fill');
+  if (countEl) {
+    countEl.textContent = `${doneCount} / 5`;
+    countEl.classList.toggle('all-done', doneCount === 5);
+  }
+  if (fillEl) fillEl.style.width = `${(doneCount / 5) * 100}%`;
+}
+
+// ── Init ──
+navigate('home');
+updateNavProgress();
+</script>
+</body>
+</html>
