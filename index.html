@@ -664,7 +664,7 @@
           and create a new form pointed at cline@useleverai.com.
           Replace "YOUR_FORMSPREE_ENDPOINT" below with your unique form endpoint URL.
         -->
-        <form id="inquiry-form" action="YOUR_FORMSPREE_ENDPOINT" method="POST" onsubmit="handleSubmit(event)">
+        <form id="inquiry-form" onsubmit="handleSubmit(event)">
 
           <!-- Route submissions to LeverAI inbox -->
           <input type="hidden" name="_replyto" value="cline@useleverai.com" />
@@ -866,45 +866,47 @@
       input.required      = isOther;
     }
 
+    const EDGE_FN = 'https://poklxjqcgggjlzzlutkh.supabase.co/functions/v1/handle-inquiry';
+
     async function handleSubmit(e) {
+      e.preventDefault();
       const form = e.target;
+      const btn  = form.querySelector('[type=submit]');
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
 
-      // If Formspree endpoint is not yet configured, show success preview locally
-      if (!form.action || form.action.includes('YOUR_FORMSPREE')) {
-        e.preventDefault();
-        document.getElementById('inquiry-form-wrap').style.display = 'none';
-        const success = document.getElementById('inquiry-success');
-        success.style.display = 'block';
-        window.scrollTo({ top: success.closest('section').offsetTop - 80, behavior: 'smooth' });
-        return;
-      }
+      const fd = new FormData(form);
 
-      // If "Other" is selected, merge the typed value into business_type before submit
+      // Resolve "Other" business type
       const select = document.getElementById('business-type-select');
       if (select.value === 'Other') {
-        const otherVal = document.getElementById('other-business-input').value.trim();
-        if (otherVal) select.value = otherVal;
+        const other = document.getElementById('other-business-input').value.trim();
+        if (other) fd.set('business_type_other', other);
       }
 
-      // Let Formspree handle the POST; show success on return
-      e.preventDefault();
+      const payload = {};
+      fd.forEach((v, k) => { payload[k] = v; });
+
       try {
-        const data = new FormData(form);
-        const res  = await fetch(form.action, {
-          method:  'POST',
-          body:    data,
-          headers: { 'Accept': 'application/json' },
+        const res = await fetch(EDGE_FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         });
+
         if (res.ok) {
           document.getElementById('inquiry-form-wrap').style.display = 'none';
           const success = document.getElementById('inquiry-success');
           success.style.display = 'block';
           window.scrollTo({ top: success.closest('section').offsetTop - 80, behavior: 'smooth' });
         } else {
-          alert('Something went wrong. Please email us directly at cline@useleverai.com.');
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Unknown error');
         }
-      } catch {
-        alert('Unable to send. Please email us directly at cline@useleverai.com.');
+      } catch (err) {
+        btn.textContent = 'Send Message';
+        btn.disabled = false;
+        alert('Something went wrong: ' + err.message + '\nPlease email us at cline@useleverai.com.');
       }
     }
   </script>
