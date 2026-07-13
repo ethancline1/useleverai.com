@@ -619,12 +619,6 @@
           Fill out the form below and we'll reach out to learn more about your workflows and where AI can make the biggest difference. No commitment, no pressure.
         </p>
 
-        <!--
-          SETUP: Formspree is configured for cline@useleverai.com.
-          Once your domain is verified, go to formspree.io, create a free account,
-          and create a new form pointed at cline@useleverai.com.
-          Replace "YOUR_FORMSPREE_ENDPOINT" below with your unique form endpoint URL.
-        -->
         <form id="inquiry-form" onsubmit="handleSubmit(event)">
 
           <!-- Route submissions to LeverAI inbox -->
@@ -763,7 +757,7 @@
       input.required      = isOther;
     }
 
-    const EDGE_FN = 'https://hvyzrfhauvqbkmaofknm.supabase.co/functions/v1/handle-inquiry';
+    const FORM_ENDPOINT = 'https://formspree.io/f/mqerkwll';
 
     async function handleSubmit(e) {
       e.preventDefault();
@@ -781,14 +775,11 @@
         if (other) fd.set('business_type_other', other);
       }
 
-      const payload = {};
-      fd.forEach((v, k) => { payload[k] = v; });
-
       try {
-        const res = await fetch(EDGE_FN, {
+        const res = await fetch(FORM_ENDPOINT, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers: { 'Accept': 'application/json' },
+          body: fd,
         });
 
         if (res.ok) {
@@ -798,7 +789,8 @@
           window.scrollTo({ top: success.closest('section').offsetTop - 80, behavior: 'smooth' });
         } else {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Unknown error');
+          const message = (err.errors || []).map(e => e.message).join(', ') || 'Unknown error';
+          throw new Error(message);
         }
       } catch (err) {
         btn.textContent = 'Send Message';
